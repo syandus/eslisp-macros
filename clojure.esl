@@ -1,0 +1,34 @@
+(var slice (. Array prototype slice))
+
+(var m module.exports)
+
+(= (get m "def")
+   (lambda ()
+     (var name (get arguments 0))
+     (var value (get arguments 1))
+     (return
+       `(var ,name ,value))))
+
+(= (get m "defn")
+   (lambda ()
+     (var name (get arguments 0))
+     (var params (get arguments 1))
+     (var body (this.list.apply null (slice.call arguments 2)))
+     (return
+       `(= ,name
+           (lambda ,params
+             ,@body)))))
+
+(= (get m "defarray")
+   (lambda ()
+     (var name (get arguments 0))
+     (var body (this.list.apply null (slice.call arguments 1)))
+     (return
+       `(var ,name (array ,@body)))))
+
+(= (get m "defobject")
+   (lambda ()
+     (var name (get arguments 0))
+     (var body (this.list.apply null (slice.call arguments 1)))
+     (return
+       `(var ,name (object ,@body)))))
