@@ -1,0 +1,101 @@
+(var slice (. Array prototype slice))
+
+(var counter 0)
+(function gensym (description)
+  (return (+ "___" (?: description description "symbol") (_++ counter))))
+
+(var
+  common-macros
+  (object
+    ; become a fan of Arc and embrace = instead
+    ; setf
+    ; (lambda ()
+    ;   (var symbol (get arguments 0))
+    ;   (var value (get arguments 1))
+    ;   (return `(= ,symbol ,value)))
+    
+    when
+    (lambda ()
+      (var cond (get arguments 0))
+      (var body (this.list.apply null (slice.call arguments 1)))
+      (return `(if ,cond (block ,@body))))
+    
+    unless
+    (lambda ()
+      (var cond (get arguments 0))
+      (var body (this.list.apply null (slice.call arguments 1)))
+      (return `(if (! ,cond) (block ,@body))))
+    
+    not
+    (lambda ()
+      (return `(! ,(get arguments 0))))
+    
+    and
+    (lambda ()
+      (return `(&& ,@(this.list.apply null arguments))))
+    
+    doarray
+    (lambda ()
+      (var index-variable (this.atom (gensym "index")))
+      (var length-variable (this.atom (gensym "length")))
+      (var args (. (get arguments 0) values))
+      (var value (get args 0))
+      (var coll (get args 1))
+      (var body (this.list.apply null (slice.call arguments 1)))
+      (return
+        `(block
+           (var ,index-variable)
+           (var ,length-variable)
+           (for
+             (seq (= ,index-variable 0)
+                  (= ,length-variable (. ,coll length)))
+             (< ,index-variable ,length-variable )
+             (++ ,index-variable)
+             (var ,value (get ,coll ,index-variable))
+             ,@body))))
+    doobject
+    (lambda ()
+      (var args (. (get arguments 0) values))
+      (var key (get args 0))
+      (var value (get args 1))
+      (var coll (get args 2))
+      (var body (this.list.apply null (slice.call arguments 1)))
+      (var coll-evaled (this.atom (gensym "object")))
+      (return
+        `(block
+           (var ,coll-evaled ,coll)
+           (forin (var ,key) ,coll-evaled
+             (if (! ((. Object prototype hasOwnProperty call) ,coll-evaled ,key))
+               (continue))
+             (var ,value (get ,coll-evaled ,key))
+             ,@body))))
+    
+    cond
+    (lambda ()
+      (var parent-form)
+      (var form)
+      
+      (var n (. arguments length))
+      (for (var i 0) (< i n) (+= i 2)
+        (var conditional (get arguments (+ i 0)))
+        (var consequent (get arguments (+ i 1)))
+        (if (=== consequent undefined)
+          (block
+            ;; conditional really the else form here
+            (form.values.push `(block ,conditional))
+            (break)))
+        (var asdf `(if ,conditional (block ,consequent)))
+        (if (=== parent-form undefined)
+          (block
+            (= parent-form asdf)
+            (= form asdf))
+          (block
+            (form.values.push asdf)
+            (= form asdf))))
+      
+      (return parent-form))
+    ))
+
+(= module.exports
+   ((lambda ()
+      (return common-macros))))
