@@ -19,8 +19,33 @@ m['defn'] = function () {
         type: 'list',
         values: Array.prototype.concat([{
                 type: 'atom',
-                value: '='
+                value: 'var'
             }], [name], [{
+                type: 'list',
+                values: Array.prototype.concat([{
+                        type: 'atom',
+                        value: 'lambda'
+                    }], [params], body.values)
+            }])
+    };
+};
+m['defmethod'] = function () {
+    var obj = arguments[0];
+    var name = arguments[1];
+    var params = arguments[2];
+    var body = this.list.apply(null, slice.call(arguments, 3));
+    return {
+        type: 'list',
+        values: Array.prototype.concat([{
+                type: 'atom',
+                value: '='
+            }], [{
+                type: 'list',
+                values: Array.prototype.concat([{
+                        type: 'atom',
+                        value: '.'
+                    }], [obj], [name])
+            }], [{
                 type: 'list',
                 values: Array.prototype.concat([{
                         type: 'atom',
